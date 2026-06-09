@@ -47,7 +47,8 @@ async def cmd_help(message: Message):
             "/addinc - add income in a single message\n"
             "/addtran - add transaction in a single message\n\n"
             "*Show balance*\n"
-            "/available (💲Available) - show your accounts balances\n\n"
+            "/available (💲Available) - show your accounts balances\n"
+            "/last (🧾Last 5) - show your last 5 transactions\n\n"
             "*Revert changes*\n"
             "/undo - delete last transaction from Google Sheet\n\n"
             "*Settings*\n"
@@ -148,6 +149,47 @@ async def cmd_available(message: Message):
     await message.answer(available, parse_mode="MarkdownV2", reply_markup=main_keyb())
 
 
+async def cmd_last_transactions(message: Message):
+    """Send last 5 transactions from user's sheet."""
+    user_sheet = Sheet(database.get_sheet_id(message.from_user.id))
+    if user_sheet is None:
+        await message.answer(
+            _(
+                "😳 Something went wrong...\n\n"
+                "Please try again later.\n"
+                "If it does not work again, check your table or add it again via /register. "
+                "Maybe you have changed the table and I can no longer work with it"
+            ),
+            reply_markup=main_keyb(),
+        )
+        return
+
+    transactions = user_sheet.get_last_transactions(5)
+
+    if not transactions:
+        await message.answer(
+            _("🤔 Looks like there are no transactions yet..."),
+            reply_markup=main_keyb(),
+        )
+        return
+
+    answer = _("🧾 Last 5 transactions:\n\n")
+
+    for i, row in enumerate(transactions, start=1):
+        date = row[0] if len(row) > 0 else ""
+        description = row[1] if len(row) > 1 else ""
+        category = row[2] if len(row) > 2 else ""
+        amount = row[3] if len(row) > 3 else ""
+        account = row[4] if len(row) > 4 else ""
+
+        answer += f"{i}. {date} | {category} | {amount} | {account}"
+        if description:
+            answer += f" | {description}"
+        answer += "\n"
+
+    await message.answer(answer, reply_markup=main_keyb())
+
+
 async def undo_transaction(message: Message):
     """This handler is used to delete last transaction from user's sheet."""
     user_sheet = Sheet(database.get_sheet_id(message.from_user.id))
@@ -197,5 +239,9 @@ def register_user(dp: Dispatcher):
     )
     dp.register_message_handler(
         cmd_available, lambda message: message.text.startswith("💲Баланс")
+    )
+    dp.register_message_handler(cmd_last_transactions, commands=["last"])
+    dp.register_message_handler(
+        cmd_last_transactions, lambda message: message.text.startswith("🧾Last 5")
     )
     dp.register_message_handler(undo_transaction, commands=["undo"])
