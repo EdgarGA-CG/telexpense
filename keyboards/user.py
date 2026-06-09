@@ -8,7 +8,7 @@ def main_keyb() -> ReplyKeyboardMarkup:
     markup = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
     markup.add(_("➕Income"), _("➖Expense"))
     markup.add(_("💱Transfer"))
-    markup.add(_("💲Available"))
+    markup.add(_("💲Available"), _("🧾Last 5"))
 
     return markup
 
