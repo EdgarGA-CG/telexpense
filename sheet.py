@@ -156,6 +156,21 @@ class Sheet:
 
         return parsed_data
 
+    def get_last_transactions(self, limit: int = 5) -> list:
+        """Get last transactions from Transactions sheet.
+
+        Returns:
+            list: list of transaction rows
+        """
+        trans_list = self.user_sheet.worksheet("Transactions")
+
+        try:
+            data = trans_list.get(f"A2:E{limit + 1}")
+        except exceptions.APIError:
+            return []
+
+        return data
+
     def get_last_transaction_type(self) -> str | None:
         """Get type of last transaction in Transactions sheet in
         user's Google Sheet. Could be 'transfer', 'category' or None.
